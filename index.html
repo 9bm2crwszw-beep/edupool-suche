@@ -385,7 +385,8 @@ const inline = document.getElementById("data").textContent.trim();
 if (inline && inline !== "__DATA__") {
   setTimeout(() => init(JSON.parse(inline)), 0);
 } else {
-  fetch(DATA_URL, { cache: "no-cache" }).then(   // immer kurz beim Server nachfragen, ob es neue Daten gibtr => { if (!r.ok) throw new Error(r.status); return r.json(); })
+  // cache: "no-cache" = immer kurz beim Server nachfragen, ob es neue Daten gibt
+  fetch(DATA_URL, { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
     .then(init)
     .catch(() => { $("grid").innerHTML = `<div class="empty" style="grid-column:1/-1"><b>Die Mediathek konnte nicht geladen werden.</b><br>Bitte lade die Seite neu.</div>`; });
 }
