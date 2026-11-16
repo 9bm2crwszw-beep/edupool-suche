@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mediathek-Suche – Medienzentren Marburg-Biedenkopf</title>
+<style>
+:root{
+  --ink:#1d2433; --muted:#5b6578; --line:#dfe3ea; --bg:#f6f7f9; --card:#fff;
+  --accent:#2a4f8f; --accent-soft:#e8eef8; --red:#c8323b; --mark:#fff1a8;
+  --radius:12px; --shadow:0 1px 2px rgba(20,30,50,.06),0 4px 14px rgba(20,30,50,.06);
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--ink);
+  font:16px/1.45 "Source Sans 3","Source Sans Pro",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:1.45rem;margin:0 0 4px;font-weight:700;letter-spacing:-.01em}
+.sub{color:var(--muted);margin:0 0 16px;font-size:.95rem}
+
+.searchbar{position:relative;display:flex;gap:8px}
+.searchbar input{flex:1;font:inherit;font-size:1.1rem;padding:14px 44px 14px 46px;border:1.5px solid var(--line);
+  border-radius:var(--radius);background:#fff;outline:none;transition:border-color .15s,box-shadow .15s}
+.searchbar input:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+.searchbar input::-webkit-search-cancel-button{-webkit-appearance:none;display:none}
+.searchbar .icon{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+.searchbar .clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);border:0;background:none;
+  font-size:1.4rem;color:var(--muted);cursor:pointer;padding:4px 8px;border-radius:8px;display:none}
+.searchbar .clear:hover{background:var(--bg)}
+.hint{color:var(--muted);font-size:.85rem;margin:8px 2px 0}
+
+.filters{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:16px 0 8px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:inherit;font-size:.88rem;border:1px solid var(--line);background:#fff;color:var(--ink);padding:5px 11px;
+  border-radius:999px;cursor:pointer;display:inline-flex;gap:6px;align-items:center;transition:background .12s,border-color .12s}
+.chip:hover{border-color:#b9c3d3}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.chip .n{font-size:.78rem;opacity:.7}
+.selects{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 4px}
+select{font:inherit;font-size:.9rem;padding:6px 30px 6px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);max-width:100%;
+  appearance:none;background-image:linear-gradient(45deg,transparent 50%,#6b7486 50%),linear-gradient(135deg,#6b7486 50%,transparent 50%);
+  background-position:calc(100% - 15px) 52%,calc(100% - 10px) 52%;background-size:5px 5px;background-repeat:no-repeat}
+select.active{border-color:var(--accent);background-color:var(--accent-soft)}
+.statusline{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin:10px 2px 14px;color:var(--muted);font-size:.92rem}
+.statusline strong{color:var(--ink)}
+.linkbtn{border:0;background:none;color:var(--accent);font:inherit;font-size:.9rem;cursor:pointer;padding:0;text-decoration:underline}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;
+  color:inherit;border:1px solid transparent;transition:transform .12s,border-color .12s,box-shadow .12s;position:relative}
+.card:hover,.card:focus-within{border-color:#b9c7de;transform:translateY(-2px);box-shadow:0 2px 4px rgba(20,30,50,.08),0 10px 24px rgba(20,30,50,.1)}
+.card a.cover{position:absolute;inset:0;z-index:1;border-radius:var(--radius)}
+.card a.cover:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.thumb{aspect-ratio:16/9;background:var(--accent-soft);position:relative;overflow:hidden}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block;position:relative}
+.thumb .ph{position:absolute;inset:0;display:grid;place-items:center;color:var(--accent);opacity:.55}
+.thumb .ph svg{width:38px;height:38px}
+.badge{position:absolute;left:8px;top:8px;background:rgba(255,255,255,.94);color:var(--ink);font-size:.75rem;font-weight:600;padding:2px 8px;border-radius:999px}
+.badge.lend{background:var(--red);color:#fff}
+.body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:6px;flex:1}
+.meta{font-size:.8rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 10px}
+.title{font-weight:700;font-size:1.02rem;line-height:1.3;margin:0}
+.subt{font-size:.85rem;color:var(--muted);margin:-2px 0 0}
+.desc{font-size:.9rem;color:#39414f;margin:0;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.kw{display:flex;flex-wrap:wrap;gap:4px}
+.kw button{position:relative;z-index:2;font:inherit;font-size:.74rem;border:1px solid var(--line);background:#fff;color:#39414f;
+  padding:1px 7px;border-radius:999px;cursor:pointer}
+.kw button:hover{border-color:var(--accent);color:var(--accent)}
+.kw button.hit{background:var(--mark);border-color:#e8d77a}
+.tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:auto;padding-top:4px}
+.tag{font-size:.72rem;background:var(--bg);color:var(--muted);padding:1px 7px;border-radius:6px}
+.open{font-size:.85rem;color:var(--accent);font-weight:600;margin-top:4px}
+mark{background:var(--mark);color:inherit;border-radius:3px;padding:0 1px}
+.more{display:flex;justify-content:center;margin:24px 0 0}
+.btn{font:inherit;background:var(--accent);color:#fff;border:0;border-radius:10px;padding:10px 20px;cursor:pointer;font-weight:600}
+.btn:hover{filter:brightness(1.08)}
+.empty{text-align:center;padding:48px 16px;color:var(--muted)}
+.empty b{color:var(--ink)}
+.sugg{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:12px}
+.note{background:#fff8e1;border:1px solid #f1dfa2;color:#5d4a10;border-radius:10px;padding:8px 12px;font-size:.9rem;margin:0 0 14px}
+.loading{padding:40px 0;text-align:center;color:var(--muted)}
+.loading .bar{width:220px;height:6px;border-radius:6px;background:var(--line);margin:12px auto 0;overflow:hidden}
+.loading .bar i{display:block;height:100%;width:40%;background:var(--accent);border-radius:6px;animation:slide 1.1s ease-in-out infinite}
+@keyframes slide{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media (max-width:560px){.grid{grid-template-columns:1fr}.wrap{padding:14px 12px 36px}h1{font-size:1.25rem}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Mediathek durchsuchen</h1>
+  <p class="sub" id="sub">Filme, Medienpakete und Verleihmedien der Medienzentren Marburg-Biedenkopf</p>
+
+  <form class="searchbar" role="search" onsubmit="event.preventDefault()">
+    <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <label for="q" class="sr">Suchbegriff</label>
+    <input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="Wonach suchst du? z. B. Fotosynthese, Demokratie Klasse 7, Lawinen …" disabled>
+    <button type="button" class="clear" id="clear" aria-label="Suche leeren">×</button>
+  </form>
+  <p class="hint">Durchsucht Titel, Beschreibungen und Schlagwörter. Tippfehler und Wortteile werden erkannt. Ein Klick auf ein Medium öffnet es in der Mediathek.</p>
+
+  <div class="filters"><div class="chips" id="types" role="group" aria-label="Medientyp"></div></div>
+  <div class="selects">
+    <label class="sr" for="avail">Verfügbarkeit</label>
+    <select id="avail"><option value="">Online &amp; Ausleihe</option><option value="online">Nur online</option><option value="offline">Nur Ausleihe (DVD u. a.)</option></select>
+    <label class="sr" for="fach">Fach</label>
+    <select id="fach"><option value="">Alle Fächer</option></select>
+    <label class="sr" for="stufe">Bildungsbereich</label>
+    <select id="stufe"><option value="">Alle Bildungsbereiche</option></select>
+    <label class="sr" for="klasse">Klasse</label>
+    <select id="klasse"><option value="">Alle Klassen</option></select>
+    <label class="sr" for="sort">Sortierung</label>
+    <select id="sort"><option value="rel">Beste Treffer</option><option value="new">Neueste zuerst</option><option value="short">Kürzeste zuerst</option><option value="az">Titel A–Z</option></select>
+  </div>
+
+  <div class="statusline"><span id="count" aria-live="polite"></span><button class="linkbtn" id="reset" hidden>Filter zurücksetzen</button></div>
+  <div id="note"></div>
+  <div class="grid" id="grid"><div class="loading" style="grid-column:1/-1">Mediathek wird geladen …<div class="bar"><i></i></div></div></div>
+  <div class="more" id="more" hidden><button class="btn" id="moreBtn">Weitere Treffer anzeigen</button></div>
+</div>
+
+<script id="data" type="application/json">__DATA__</script>
+<script>
+(() => {
+"use strict";
+/* ===== Einstellungen ===== */
+const DATA_URL = "medien.json";             // Datendatei neben dieser Seite
+const STANDORT = 26;
+const RECORD_URL = (id, src) => `https://hessen.edupool.de/?record=${encodeURIComponent(id)}&src=${encodeURIComponent(src || "online")}&standort=${STANDORT}`;
+const COVER_URL = d => `https://playout01.edupool.cloud/cover/default/400x226/${encodeURIComponent(d.img || d.id.toUpperCase())}.png`;
+const PAGE = 24;
+const TYPE_GROUPS = [
+  ["Film & Video", ["Online-Film","Filmsequenz","Video-DVD","16-mm-Film","Super-8-Film","Videokassette"]],
+  ["Medienpaket", ["Online-Medium","Medienpaket"]],
+  ["Audio", ["Online-Audio","Audio-CD","Tonkassette","Tonbildreihe"]],
+  ["Software", ["Online-Software","Software","CD-ROM","DVD-ROM"]],
+  ["Bild & Dokument", ["Bild","Online-Dokument","Arbeitstransparente","Buch"]],
+  ["Website/Tool", ["URL/Recherchetool"]],
+];
+const STUFEN_ORDER = ["Elementarbereich","Grundschule","Sekundarstufe I","Sekundarstufe II","Sonderpädagogische Förderung","Jugendbildung","Berufsbildende Schule","Erwachsenenbildung","Lehrerfort- und -weiterbildung"];
+const STOP = new Set("der die das den dem des ein eine einen einem einer und oder mit fuer von vom im in zu zum zur auf an am aus bei ist sind wie was wo wer ueber unter nach vor als auch nicht es sich klasse klassen".split(" "));
+
+/* ===== Hilfen ===== */
+const $ = id => document.getElementById(id);
+const norm = s => s.toLowerCase()
+  .replace(/ä/g,"ae").replace(/ö/g,"oe").replace(/ü/g,"ue").replace(/ß/g,"ss")
+  .normalize("NFD").replace(/[̀-ͯ]/g,"")
+  .replace(/ph/g,"f");                         // Photosynthese = Fotosynthese, Grafik = Graphik
+const WORD = /[\p{L}\p{N}]+/gu;
+const tokens = s => (norm(s || "").match(WORD) || []);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const typeGroup = t => { for (const [g, list] of TYPE_GROUPS) if (list.includes(t)) return g; return "Sonstiges"; };
+
+let DOCS = [], vocab = new Map(), TERMS = [], TERMS_SORTED = [];
+
+/* ===== Index =====
+   vocab: Begriff -> Array aus (docIndex * 8 + Gewichtsstufe); pro Dokument nur die höchste Stufe */
+const W = [0, 1, 1.6, 2.4, 3.2, 4.5, 6];      // Stufe -> Gewicht
+function buildIndex(){
+  const tmp = new Map();
+  const seen = new Map();
+  const put = (term, i, lvl) => {
+    if (term.length < 2 && !/\d/.test(term)) return;
+    const prev = seen.get(term);
+    if (prev !== undefined && prev >= lvl) return;
+    seen.set(term, lvl);
+    let a = tmp.get(term); if (!a){ a = []; tmp.set(term, a); }
+    a.push(i * 8 + lvl);
+  };
+  for (const d of DOCS){
+    seen.clear();
+    for (const t of tokens(d.t)) put(t, d.i, 6);
+    for (const s of d.sw) for (const t of tokens(s)) put(t, d.i, 5);
+    for (const t of tokens((d.u || "") + " " + (d.se || ""))) put(t, d.i, 4);
+    for (const t of tokens([d.ty, d.g, ...d.f].join(" "))) put(t, d.i, 3);
+    for (const t of tokens(d.p || "")) put(t, d.i, 2);
+    for (const t of tokens(d.d)) put(t, d.i, 1);
+    d.nt = norm(d.t);
+  }
+  vocab = tmp; TERMS = [...tmp.keys()]; TERMS_SORTED = TERMS.slice().sort();
+}
+
+function lev(a, b, max){
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+  let prev = Array.from({length:b.length+1}, (_, j) => j);
+  for (let i = 1; i <= a.length; i++){
+    const cur = [i]; let rowMin = i;
+    for (let j = 1; j <= b.length; j++){
+      const v = Math.min(prev[j] + 1, cur[j-1] + 1, prev[j-1] + (a[i-1] === b[j-1] ? 0 : 1));
+      cur.push(v); if (v < rowMin) rowMin = v;
+    }
+    if (rowMin > max) return max + 1;
+    prev = cur;
+  }
+  return prev[b.length];
+}
+function lowerBound(arr, x){ let lo = 0, hi = arr.length; while (lo < hi){ const m = (lo + hi) >> 1; if (arr[m] < x) lo = m + 1; else hi = m; } return lo; }
+
+const expCache = new Map();
+function expand(q){                       // passende Begriffe mit Qualitätsfaktor
+  if (expCache.has(q)) return expCache.get(q);
+  const out = new Map();
+  if (vocab.has(q)) out.set(q, 1);
+  // Präfix (Wortanfang), schnell über sortierte Liste
+  if (q.length >= 2){
+    for (let k = lowerBound(TERMS_SORTED, q); k < TERMS_SORTED.length && TERMS_SORTED[k].startsWith(q); k++){
+      const t = TERMS_SORTED[k]; if (t !== q) out.set(t, q.length >= 3 ? 0.85 : 0.55);
+    }
+  }
+  const maxD = q.length >= 8 ? 2 : q.length >= 4 ? 1 : 0;
+  if (q.length >= 4){
+    for (const t of TERMS){
+      if (out.has(t)) continue;
+      let s = 0;
+      if (t.length > q.length && t.includes(q)) s = 0.6;          // Wortteil, z. B. „ball“ in „fussball“
+      else if (maxD && t[0] === q[0] && Math.abs(t.length - q.length) <= maxD){
+        const d = lev(q, t, maxD); if (d <= maxD) s = 0.72 - 0.12 * (d - 1);
+      } else if (maxD && t[0] === q[0] && t.length > q.length && q.length >= 5){
+        const d = lev(q, t.slice(0, q.length), maxD); if (d <= maxD) s = 0.5 - 0.12 * (d - 1);
+      }
+      if (s > 0) out.set(t, s);
+    }
+  }
+  if (expCache.size > 300) expCache.clear();
+  expCache.set(q, out);
+  return out;
+}
+
+function search(query){
+  let raw = tokens(query);
+  // „Klasse 7“ / „7. Klasse“ als Klassenfilter verstehen
+  let klasse = null;
+  const km = norm(query).match(/(?:klasse|kl\.?|jahrgang(?:sstufe)?)\s*(\d{1,2})|(\d{1,2})\s*\.?\s*(?:klasse|kl\b)/);
+  if (km){ klasse = +(km[1] || km[2]); raw = raw.filter(t => t !== String(klasse)); }
+  let qt = [...new Set(raw.filter(t => !STOP.has(t)))];
+  if (!qt.length) return { hits: null, terms: new Set(), partial: false, klasse };
+  const per = qt.map(q => {
+    const sc = new Map();
+    for (const [term, f] of expand(q)){
+      for (const code of vocab.get(term)){
+        const i = (code / 8) | 0, v = f * W[code & 7];
+        if (v > (sc.get(i) || 0)) sc.set(i, v);
+      }
+    }
+    return sc;
+  });
+  const terms = new Set(); qt.forEach(q => expand(q).forEach((_, t) => terms.add(t)));
+  const total = new Map(), cnt = new Map();
+  per.forEach(sc => sc.forEach((v, i) => { total.set(i, (total.get(i) || 0) + v); cnt.set(i, (cnt.get(i) || 0) + 1); }));
+  let ids = [...total.keys()].filter(i => cnt.get(i) === qt.length);
+  let partial = false;
+  if (!ids.length && qt.length > 1){ ids = [...total.keys()]; partial = true; }
+  const nq = qt.join(" ");
+  const hits = ids.map(i => {
+    const d = DOCS[i];
+    let s = total.get(i) + (cnt.get(i) - 1) * 2;
+    if (nq.length > 2 && d.nt.includes(nq)) s += 8;
+    if (d.nt.startsWith(nq)) s += 3;
+    if (total.get(i) / qt.length >= 3) s += 4 / Math.max(1, (d.nt.match(WORD) || []).length);   // Treffer im Titel: kurze Titel bevorzugen
+    if (d.y) s += Math.max(0, d.y - 2005) * 0.04;
+    return { d, s };
+  });
+  return { hits, terms, partial, klasse };
+}
+
+/* ===== Oberfläche ===== */
+const state = { q: "", types: new Set(), avail: "", stufe: "", fach: "", klasse: "", sort: "rel", shown: PAGE };
+const ICONS = {
+  "Film & Video": '<path d="M4 6h11a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1z"/><path d="m16 10 5-3v10l-5-3"/>',
+  "Medienpaket": '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11"/>',
+  "Bild & Dokument": '<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/>',
+  "Audio": '<path d="M9 18V6l10-2v12"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/>',
+  "Website/Tool": '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/>',
+  "Software": '<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>',
+  "Sonstiges": '<circle cx="12" cy="12" r="9"/>'
+};
+const icon = g => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${ICONS[g] || ICONS.Sonstiges}</svg>`;
+const hl = (text, terms) => !terms.size ? esc(text) : esc(text).replace(/[\p{L}\p{N}]+/gu, w => terms.has(norm(w)) ? `<mark>${w}</mark>` : w);
+const swHit = (s, terms) => terms.size && tokens(s).some(t => terms.has(t));
+const fmtDur = m => m >= 60 ? `${Math.floor(m/60)} h${m % 60 ? " " + (m % 60) + " min" : ""}` : `${m} min`;
+const fmtK = k => k ? (k[0] === k[1] ? `Klasse ${k[0]}` : `Klasse ${k[0]}–${k[1]}`) : "";
+const fmtN = n => n.toLocaleString("de-DE");
+
+let groupsPresent = [], last = null;
+
+function init(data){
+  DOCS = data;
+  DOCS.forEach((d, i) => { d.i = i; d.g = typeGroup(d.ty); d.sw = d.sw || []; d.f = d.f || []; d.st = d.st || []; });
+  buildIndex();
+  groupsPresent = TYPE_GROUPS.map(g => g[0]).concat("Sonstiges").filter(g => DOCS.some(d => d.g === g));
+  STUFEN_ORDER.filter(s => DOCS.some(d => d.st.includes(s))).forEach(s => $("stufe").add(new Option(s, s)));
+  [...new Set(DOCS.flatMap(d => d.f))].sort((a, b) => a.localeCompare(b, "de")).forEach(f => $("fach").add(new Option(f, f)));
+  for (let k = 1; k <= 13; k++) $("klasse").add(new Option(`Klasse ${k}`, k));
+  const off = DOCS.filter(d => d.s === "offline").length;
+  $("sub").textContent = `${fmtN(DOCS.length)} Medien der Medienzentren Marburg-Biedenkopf – ${fmtN(DOCS.length - off)} online, ${fmtN(off)} zur Ausleihe`;
+  $("q").disabled = false;
+  try { const pq = new URLSearchParams(location.search).get("q"); if (pq){ $("q").value = pq; state.q = pq; $("clear").style.display = "block"; } } catch(e){}
+  run();
+}
+
+function run(){
+  const { hits, terms, partial, klasse } = search(state.q);
+  const k = state.klasse ? +state.klasse : klasse;
+  const base = hits ? hits : DOCS.map(d => ({ d, s: 0 }));
+  const passOther = x => (!state.avail || x.d.s === state.avail)
+    && (!state.stufe || x.d.st.includes(state.stufe))
+    && (!state.fach || x.d.f.includes(state.fach))
+    && (!k || (x.d.k && x.d.k[0] <= k && x.d.k[1] >= k));
+  const typeCounts = {};
+  const pre = base.filter(passOther);
+  pre.forEach(x => { typeCounts[x.d.g] = (typeCounts[x.d.g] || 0) + 1; });
+  const list = state.types.size ? pre.filter(x => state.types.has(x.d.g)) : pre;
+  const sorters = {
+    rel: (a, b) => hits ? b.s - a.s : (b.d.y || 0) - (a.d.y || 0),
+    new: (a, b) => (b.d.y || 0) - (a.d.y || 0) || b.s - a.s,
+    short: (a, b) => (a.d.du ?? 1e9) - (b.d.du ?? 1e9),
+    az: (a, b) => a.d.t.localeCompare(b.d.t, "de")
+  };
+  list.sort(sorters[state.sort]);
+  last = { list, terms, partial, typeCounts, klasseAuto: !state.klasse && klasse ? klasse : null };
+  render();
+}
+
+function render(){
+  const { list, terms, partial, typeCounts, klasseAuto } = last;
+  $("types").innerHTML = groupsPresent.map(g => {
+    const n = typeCounts[g] || 0, on = state.types.has(g);
+    if (!n && !on) return "";
+    return `<button type="button" class="chip" aria-pressed="${on}" data-g="${esc(g)}">${esc(g)} <span class="n">${fmtN(n)}</span></button>`;
+  }).join("");
+  ["avail","fach","stufe","klasse"].forEach(id => $(id).classList.toggle("active", !!state[id]));
+  const filtered = state.types.size || state.avail || state.stufe || state.fach || state.klasse;
+  $("reset").hidden = !filtered;
+  $("count").innerHTML = state.q
+    ? `<strong>${fmtN(list.length)}</strong> Treffer für „${esc(state.q)}“${klasseAuto ? ` (Klasse ${klasseAuto})` : ""}`
+    : `<strong>${fmtN(list.length)}</strong> Medien${filtered ? " (gefiltert)" : " – die neuesten zuerst"}`;
+  $("note").innerHTML = partial && list.length ? `<p class="note">Kein Medium enthält alle Suchbegriffe. Angezeigt werden Medien, die zu einem Teil der Begriffe passen.</p>` : "";
+
+  if (!list.length){
+    const ideas = ["Klimawandel","Demokratie","Fotosynthese","Bruchrechnung","Mittelalter","Medienkompetenz"];
+    $("grid").innerHTML = `<div class="empty" style="grid-column:1/-1"><b>Keine Treffer.</b><br>Versuche einen allgemeineren Begriff${filtered ? " oder setze die Filter zurück" : ""}.<div class="sugg">${ideas.map(i => `<button class="chip" data-q="${i}">${i}</button>`).join("")}</div></div>`;
+    $("more").hidden = true; return;
+  }
+  $("grid").innerHTML = list.slice(0, state.shown).map(({ d }) => {
+    const lend = d.s === "offline";
+    const meta = [d.ty, d.du ? fmtDur(d.du) : "", d.y || ""].filter(Boolean).map(esc).join(" · ");
+    const sub = [d.se, d.u].filter(Boolean).join(" – ");
+    const kws = d.sw.slice().sort((a, b) => swHit(b, terms) - swHit(a, terms)).slice(0, 5);
+    const tags = [fmtK(d.k), ...d.f.slice(0, 2)].filter(Boolean);
+    return `<article class="card">
+      <a class="cover" href="${RECORD_URL(d.id, d.s)}" target="_blank" rel="noopener" aria-label="${esc(d.t)} in der Mediathek öffnen"></a>
+      <div class="thumb"><div class="ph">${icon(d.g)}</div><img src="${COVER_URL(d)}" alt="" loading="lazy" onerror="this.remove()">
+        <span class="badge ${lend ? "lend" : ""}">${lend ? "Ausleihe" : esc(d.g)}</span></div>
+      <div class="body">
+        <div class="meta">${meta}</div>
+        <h2 class="title">${hl(d.t, terms)}</h2>
+        ${sub ? `<p class="subt">${hl(sub, terms)}</p>` : ""}
+        <p class="desc">${hl(d.d, terms)}</p>
+        ${kws.length ? `<div class="kw">${kws.map(s => `<button type="button" data-q="${esc(s)}" class="${swHit(s, terms) ? "hit" : ""}" title="Nach „${esc(s)}“ suchen">${esc(s)}</button>`).join("")}</div>` : ""}
+        <div class="tags">${tags.map(s => `<span class="tag">${esc(s)}</span>`).join("")}</div>
+        <span class="open">In der Mediathek öffnen →</span>
+      </div></article>`;
+  }).join("");
+  $("more").hidden = list.length <= state.shown;
+  $("moreBtn").textContent = `Weitere Treffer anzeigen (${fmtN(list.length - state.shown)})`;
+}
+
+let timer;
+const setQ = v => { $("q").value = v; state.q = v; state.shown = PAGE; $("clear").style.display = v ? "block" : "none"; run(); };
+$("q").addEventListener("input", e => {
+  state.q = e.target.value; state.shown = PAGE;
+  $("clear").style.display = state.q ? "block" : "none";
+  clearTimeout(timer); timer = setTimeout(run, 150);
+});
+$("clear").onclick = () => { setQ(""); $("q").focus(); };
+$("types").onclick = e => { const b = e.target.closest(".chip"); if (!b) return; const g = b.dataset.g; state.types.has(g) ? state.types.delete(g) : state.types.add(g); state.shown = PAGE; run(); };
+$("grid").addEventListener("click", e => { const b = e.target.closest("[data-q]"); if (!b) return; e.preventDefault(); setQ(b.dataset.q); window.scrollTo({ top: 0, behavior: "smooth" }); });
+["avail","fach","stufe","klasse"].forEach(id => $(id).onchange = e => { state[id] = e.target.value; state.shown = PAGE; run(); });
+$("sort").onchange = e => { state.sort = e.target.value; run(); };
+$("reset").onclick = () => { state.types.clear(); ["avail","fach","stufe","klasse"].forEach(id => { state[id] = ""; $(id).value = ""; }); state.shown = PAGE; run(); };
+$("moreBtn").onclick = () => { state.shown += PAGE; render(); };
+
+/* ===== Daten laden ===== */
+const inline = document.getElementById("data").textContent.trim();
+if (inline && inline !== "__DATA__") {
+  setTimeout(() => init(JSON.parse(inline)), 0);
+} else {
+  fetch(DATA_URL).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(init)
+    .catch(() => { $("grid").innerHTML = `<div class="empty" style="grid-column:1/-1"><b>Die Mediathek konnte nicht geladen werden.</b><br>Bitte lade die Seite neu.</div>`; });
+}
+})();
+</script>
+</body>
+</html>
