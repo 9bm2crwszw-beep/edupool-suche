@@ -45,10 +45,13 @@ select.active{border-color:var(--accent);background-color:var(--accent-soft)}
 .statusline strong{color:var(--ink)}
 .linkbtn{border:0;background:none;color:var(--accent);font:inherit;font-size:.9rem;cursor:pointer;padding:0;text-decoration:underline}
 
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media (max-width:900px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;
-  color:inherit;border:1px solid transparent;transition:transform .12s,border-color .12s,box-shadow .12s;position:relative}
-.card:hover,.card:focus-within{border-color:#b9c7de;transform:translateY(-2px);box-shadow:0 2px 4px rgba(20,30,50,.08),0 10px 24px rgba(20,30,50,.1)}
+  color:inherit;border:1px solid transparent;position:relative;content-visibility:auto;contain-intrinsic-size:auto 440px}
+@media (hover:hover){.card{transition:transform .12s,border-color .12s,box-shadow .12s}
+.card:hover{border-color:#b9c7de;transform:translateY(-2px);box-shadow:0 2px 4px rgba(20,30,50,.08),0 10px 24px rgba(20,30,50,.1)}}
+.card:focus-within{border-color:#b9c7de}
 .card a.cover{position:absolute;inset:0;z-index:1;border-radius:var(--radius)}
 .card a.cover:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .thumb{aspect-ratio:16/9;background:var(--accent-soft);position:relative;overflow:hidden}
@@ -57,10 +60,10 @@ select.active{border-color:var(--accent);background-color:var(--accent-soft)}
 .thumb .ph svg{width:38px;height:38px}
 .badge{position:absolute;left:8px;top:8px;background:rgba(255,255,255,.94);color:var(--ink);font-size:.75rem;font-weight:600;padding:2px 8px;border-radius:999px}
 .body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:6px;flex:1}
-.meta{font-size:.8rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 10px}
-.title{font-weight:700;font-size:1.02rem;line-height:1.3;margin:0}
-.subt{font-size:.85rem;color:var(--muted);margin:-2px 0 0}
-.desc{font-size:.9rem;color:#39414f;margin:0;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.meta{font-size:.72rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 10px}
+.title{font-weight:600;font-size:.88rem;line-height:1.3;margin:0}
+.subt{font-size:.78rem;color:var(--muted);margin:-2px 0 0}
+.desc{font-size:.78rem;line-height:1.4;color:#39414f;margin:0;display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden}
 .kw{display:flex;flex-wrap:wrap;gap:4px}
 .kw button{position:relative;z-index:2;font:inherit;font-size:.74rem;border:1px solid var(--line);background:#fff;color:#39414f;
   padding:1px 7px;border-radius:999px;cursor:pointer}
@@ -84,9 +87,9 @@ mark{background:var(--mark);color:inherit;border-radius:3px;padding:0 1px}
 /* Login */
 .kopf{display:flex;justify-content:flex-end;margin:0 0 -6px}
 .login{position:relative}
-.login > button{font:inherit;font-size:.95rem;font-weight:600;display:inline-flex;align-items:center;gap:7px;background:#b2bcd2;border:1px solid #b2bcd2;
+.login > button{font:inherit;font-size:.95rem;font-weight:600;display:inline-flex;align-items:center;gap:7px;background:#ccd3e3;border:1px solid #ccd3e3;
   color:#1d2433;padding:6px 14px;border-radius:8px;cursor:pointer;transition:background .12s,border-color .12s}
-.login > button:hover,.login > button[aria-expanded="true"]{background:#a0acc7;border-color:#a0acc7}
+.login > button:hover,.login > button[aria-expanded="true"]{background:#b2bcd2;border-color:#b2bcd2}
 .login > button svg{width:16px;height:16px}
 .lmenu{position:absolute;right:0;top:calc(100% + 6px);background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 28px rgba(20,30,50,.16);
   min-width:210px;padding:6px;z-index:20}
@@ -108,7 +111,8 @@ mark{background:var(--mark);color:inherit;border-radius:3px;padding:0 1px}
   scroll-behavior:smooth;padding:2px 2px 8px;scrollbar-width:none}
 .nspur::-webkit-scrollbar{display:none}
 .ncard{scroll-snap-align:start;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;
-  text-decoration:none;color:inherit;border:1px solid transparent;transition:border-color .12s,box-shadow .12s}
+  text-decoration:none;color:inherit;border:1px solid transparent}
+@media (hover:hover){.ncard{transition:border-color .12s,box-shadow .12s}}
 .ncard:hover,.ncard:focus-visible{border-color:#b9c7de;box-shadow:0 2px 4px rgba(20,30,50,.08),0 10px 24px rgba(20,30,50,.1);outline:none}
 .nbild{aspect-ratio:16/9;background:#fff;overflow:hidden}
 .nbild img{width:100%;height:100%;object-fit:cover;display:block}
@@ -154,7 +158,7 @@ mark{background:var(--mark);color:inherit;border-radius:3px;padding:0 1px}
     <label class="sr" for="sort">Sortierung</label>
     <select id="sort"><option value="rel">Beste Treffer</option><option value="new">Neueste zuerst</option><option value="short">Kürzeste zuerst</option><option value="az">Titel A–Z</option></select>
     <label class="sr" for="typ">Medienart</label>
-    <select id="typ"><option value="">Medienart</option></select>
+    <select id="typ"><option value="">Alle Medienarten</option></select>
   </div>
 
   <section id="news" hidden aria-label="Neuigkeiten"></section>
@@ -204,7 +208,7 @@ let DOCS = [], vocab = new Map(), TERMS = [], TERMS_SORTED = [];
 /* ===== Index =====
    vocab: Begriff -> Array aus (docIndex * 8 + Gewichtsstufe); pro Dokument nur die höchste Stufe */
 const W = [0, 1, 1.6, 2.4, 3.2, 4.5, 6];      // Stufe -> Gewicht
-function buildIndex(){
+async function buildIndex(){
   const tmp = new Map();
   const seen = new Map();
   const put = (term, i, lvl) => {
@@ -215,7 +219,9 @@ function buildIndex(){
     let a = tmp.get(term); if (!a){ a = []; tmp.set(term, a); }
     a.push(i * 8 + lvl);
   };
-  for (const d of DOCS){
+  for (let k = 0; k < DOCS.length; k++){
+    const d = DOCS[k];
+    if (k % 1000 === 999) await new Promise(r => setTimeout(r, 0));   // dem Browser Luft zum Scrollen lassen
     seen.clear();
     for (const t of tokens(d.t)) put(t, d.i, 6);
     for (const s of d.sw) for (const t of tokens(s)) put(t, d.i, 5);
@@ -331,16 +337,16 @@ const fmtN = n => n.toLocaleString("de-DE");
 
 let groupsPresent = [], last = null;
 
-function init(data){
+async function init(data){
   DOCS = data.filter(d => d.s !== "offline");                 // nur Online-Medien
   DOCS.forEach((d, i) => { d.i = i; d.g = typeGroup(d.ty); d.sw = d.sw || []; d.f = d.f || []; d.st = d.st || []; });
-  buildIndex();
   groupsPresent = TYPE_GROUPS.map(g => g[0]).concat("Sonstiges").filter(g => DOCS.some(d => d.g === g));
   STUFEN_ORDER.filter(s => DOCS.some(d => d.st.includes(s))).forEach(s => $("stufe").add(new Option(s, s)));
   [...new Set(DOCS.flatMap(d => d.f))].sort((a, b) => a.localeCompare(b, "de")).forEach(f => $("fach").add(new Option(f, f)));
+  run();                                   // Medienliste sofort zeigen, Suchindex danach im Hintergrund aufbauen
+  await buildIndex();
   $("q").disabled = false;
-  try { const pq = new URLSearchParams(location.search).get("q"); if (pq){ $("q").value = pq; state.q = pq; $("clear").style.display = "block"; } } catch(e){}
-  run();
+  try { const pq = new URLSearchParams(location.search).get("q"); if (pq){ $("q").value = pq; state.q = pq; $("clear").style.display = "block"; run(); } } catch(e){}
 }
 
 function run(){
@@ -369,7 +375,7 @@ function run(){
 function render(){
   const { list, terms, partial, typeCounts, klasseAuto } = last;
   // Auswahlfeld "Medienart" mit aktuellen Trefferzahlen
-  $("typ").innerHTML = `<option value="">Medienart</option>` + groupsPresent
+  $("typ").innerHTML = `<option value="">Alle Medienarten</option>` + groupsPresent
     .filter(g => typeCounts[g] || state.typ === g)
     .map(g => `<option value="${esc(g)}"${state.typ === g ? " selected" : ""}>${esc(g)} (${fmtN(typeCounts[g] || 0)})</option>`).join("");
   ["fach","stufe","typ"].forEach(id => $(id).classList.toggle("active", !!state[id]));
@@ -392,7 +398,7 @@ function render(){
     const tags = [fmtK(d.k), ...d.f.slice(0, 2)].filter(Boolean);
     return `<article class="card">
       <a class="cover" href="${RECORD_URL(d.id, d.s)}" target="_blank" rel="noopener" aria-label="${esc(d.t)} in der Mediathek öffnen"></a>
-      <div class="thumb"><div class="ph">${icon(d.g)}</div><img src="${COVER_URL(d)}" alt="" loading="lazy" onerror="this.remove()">
+      <div class="thumb"><div class="ph">${icon(d.g)}</div><img src="${COVER_URL(d)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">
         <span class="badge">${esc(d.g)}</span></div>
       <div class="body">
         <div class="meta">${meta}</div>
@@ -449,7 +455,7 @@ function renderNews(data){
       </div>
       <div class="nspur" id="nspur${n}">${b.eintraege.map(e => `
         <a class="ncard" href="${NEWS_LINK(e.id)}" target="_blank" rel="noopener">
-          <div class="nbild">${e.bild ? `<img src="${esc(encodeURI(e.bild))}" alt="" loading="lazy" onerror="this.remove()">` : ""}</div>
+          <div class="nbild">${e.bild ? `<img src="${esc(encodeURI(e.bild))}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : ""}</div>
           <div class="ninhalt"><span class="ndatum">${esc(e.datum || "")}</span><h3 class="ntitel">${esc(e.titel)}</h3>${e.text ? `<p class="ntext">${esc(e.text)}</p>` : ""}</div>
         </a>`).join("")}
       </div>
