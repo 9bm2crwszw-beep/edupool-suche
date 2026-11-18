@@ -15,7 +15,7 @@
 html,body{margin:0;background:var(--bg);color:var(--ink);
   font:16px/1.45 "Source Sans 3","Source Sans Pro",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
 .wrap{max-width:1180px;margin:0 auto;padding:20px 16px 48px}
-h1{font-size:1.45rem;margin:0 0 4px;font-weight:700;letter-spacing:-.01em}
+h1{font-size:1.45rem;margin:0 0 14px;font-weight:700;letter-spacing:-.01em}
 .sub{color:var(--muted);margin:0 0 16px;font-size:.95rem}
 
 .searchbar{position:relative;display:flex;gap:8px}
@@ -56,7 +56,6 @@ select.active{border-color:var(--accent);background-color:var(--accent-soft)}
 .thumb .ph{position:absolute;inset:0;display:grid;place-items:center;color:var(--accent);opacity:.55}
 .thumb .ph svg{width:38px;height:38px}
 .badge{position:absolute;left:8px;top:8px;background:rgba(255,255,255,.94);color:var(--ink);font-size:.75rem;font-weight:600;padding:2px 8px;border-radius:999px}
-.badge.lend{background:var(--red);color:#fff}
 .body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:6px;flex:1}
 .meta{font-size:.8rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 10px}
 .title{font-weight:700;font-size:1.02rem;line-height:1.3;margin:0}
@@ -89,7 +88,6 @@ mark{background:var(--mark);color:inherit;border-radius:3px;padding:0 1px}
 <body>
 <div class="wrap">
   <h1>Mediathek durchsuchen</h1>
-  <p class="sub" id="sub">Filme, Medienpakete und Verleihmedien der Medienzentren Marburg-Biedenkopf</p>
 
   <form class="searchbar" role="search" onsubmit="event.preventDefault()">
     <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
@@ -101,8 +99,6 @@ mark{background:var(--mark);color:inherit;border-radius:3px;padding:0 1px}
 
   <div class="filters"><div class="chips" id="types" role="group" aria-label="Medientyp"></div></div>
   <div class="selects">
-    <label class="sr" for="avail">Verfügbarkeit</label>
-    <select id="avail"><option value="">Online &amp; Ausleihe</option><option value="online">Nur online</option><option value="offline">Nur Ausleihe (DVD u. a.)</option></select>
     <label class="sr" for="fach">Fach</label>
     <select id="fach"><option value="">Alle Fächer</option></select>
     <label class="sr" for="stufe">Bildungsbereich</label>
@@ -264,7 +260,7 @@ function search(query){
 }
 
 /* ===== Oberfläche ===== */
-const state = { q: "", types: new Set(), avail: "", stufe: "", fach: "", klasse: "", sort: "rel", shown: PAGE };
+const state = { q: "", types: new Set(), stufe: "", fach: "", klasse: "", sort: "rel", shown: PAGE };
 const ICONS = {
   "Film & Video": '<path d="M4 6h11a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1z"/><path d="m16 10 5-3v10l-5-3"/>',
   "Medienpaket": '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11"/>',
@@ -284,15 +280,13 @@ const fmtN = n => n.toLocaleString("de-DE");
 let groupsPresent = [], last = null;
 
 function init(data){
-  DOCS = data;
+  DOCS = data.filter(d => d.s !== "offline");                 // nur Online-Medien
   DOCS.forEach((d, i) => { d.i = i; d.g = typeGroup(d.ty); d.sw = d.sw || []; d.f = d.f || []; d.st = d.st || []; });
   buildIndex();
   groupsPresent = TYPE_GROUPS.map(g => g[0]).concat("Sonstiges").filter(g => DOCS.some(d => d.g === g));
   STUFEN_ORDER.filter(s => DOCS.some(d => d.st.includes(s))).forEach(s => $("stufe").add(new Option(s, s)));
   [...new Set(DOCS.flatMap(d => d.f))].sort((a, b) => a.localeCompare(b, "de")).forEach(f => $("fach").add(new Option(f, f)));
   for (let k = 1; k <= 13; k++) $("klasse").add(new Option(`Klasse ${k}`, k));
-  const off = DOCS.filter(d => d.s === "offline").length;
-  $("sub").textContent = `${fmtN(DOCS.length)} Medien der Medienzentren Marburg-Biedenkopf – ${fmtN(DOCS.length - off)} online, ${fmtN(off)} zur Ausleihe`;
   $("q").disabled = false;
   try { const pq = new URLSearchParams(location.search).get("q"); if (pq){ $("q").value = pq; state.q = pq; $("clear").style.display = "block"; } } catch(e){}
   run();
@@ -302,8 +296,7 @@ function run(){
   const { hits, terms, partial, klasse } = search(state.q);
   const k = state.klasse ? +state.klasse : klasse;
   const base = hits ? hits : DOCS.map(d => ({ d, s: 0 }));
-  const passOther = x => (!state.avail || x.d.s === state.avail)
-    && (!state.stufe || x.d.st.includes(state.stufe))
+  const passOther = x => (!state.stufe || x.d.st.includes(state.stufe))
     && (!state.fach || x.d.f.includes(state.fach))
     && (!k || (x.d.k && x.d.k[0] <= k && x.d.k[1] >= k));
   const typeCounts = {};
@@ -328,8 +321,8 @@ function render(){
     if (!n && !on) return "";
     return `<button type="button" class="chip" aria-pressed="${on}" data-g="${esc(g)}">${esc(g)} <span class="n">${fmtN(n)}</span></button>`;
   }).join("");
-  ["avail","fach","stufe","klasse"].forEach(id => $(id).classList.toggle("active", !!state[id]));
-  const filtered = state.types.size || state.avail || state.stufe || state.fach || state.klasse;
+  ["fach","stufe","klasse"].forEach(id => $(id).classList.toggle("active", !!state[id]));
+  const filtered = state.types.size || state.stufe || state.fach || state.klasse;
   $("reset").hidden = !filtered;
   $("count").innerHTML = state.q
     ? `<strong>${fmtN(list.length)}</strong> Treffer für „${esc(state.q)}“${klasseAuto ? ` (Klasse ${klasseAuto})` : ""}`
@@ -342,7 +335,6 @@ function render(){
     $("more").hidden = true; return;
   }
   $("grid").innerHTML = list.slice(0, state.shown).map(({ d }) => {
-    const lend = d.s === "offline";
     const meta = [d.ty, d.du ? fmtDur(d.du) : "", d.y || ""].filter(Boolean).map(esc).join(" · ");
     const sub = [d.se, d.u].filter(Boolean).join(" – ");
     const kws = d.sw.slice().sort((a, b) => swHit(b, terms) - swHit(a, terms)).slice(0, 5);
@@ -350,7 +342,7 @@ function render(){
     return `<article class="card">
       <a class="cover" href="${RECORD_URL(d.id, d.s)}" target="_blank" rel="noopener" aria-label="${esc(d.t)} in der Mediathek öffnen"></a>
       <div class="thumb"><div class="ph">${icon(d.g)}</div><img src="${COVER_URL(d)}" alt="" loading="lazy" onerror="this.remove()">
-        <span class="badge ${lend ? "lend" : ""}">${lend ? "Ausleihe" : esc(d.g)}</span></div>
+        <span class="badge">${esc(d.g)}</span></div>
       <div class="body">
         <div class="meta">${meta}</div>
         <h2 class="title">${hl(d.t, terms)}</h2>
@@ -375,9 +367,9 @@ $("q").addEventListener("input", e => {
 $("clear").onclick = () => { setQ(""); $("q").focus(); };
 $("types").onclick = e => { const b = e.target.closest(".chip"); if (!b) return; const g = b.dataset.g; state.types.has(g) ? state.types.delete(g) : state.types.add(g); state.shown = PAGE; run(); };
 $("grid").addEventListener("click", e => { const b = e.target.closest("[data-q]"); if (!b) return; e.preventDefault(); setQ(b.dataset.q); window.scrollTo({ top: 0, behavior: "smooth" }); });
-["avail","fach","stufe","klasse"].forEach(id => $(id).onchange = e => { state[id] = e.target.value; state.shown = PAGE; run(); });
+["fach","stufe","klasse"].forEach(id => $(id).onchange = e => { state[id] = e.target.value; state.shown = PAGE; run(); });
 $("sort").onchange = e => { state.sort = e.target.value; run(); };
-$("reset").onclick = () => { state.types.clear(); ["avail","fach","stufe","klasse"].forEach(id => { state[id] = ""; $(id).value = ""; }); state.shown = PAGE; run(); };
+$("reset").onclick = () => { state.types.clear(); ["fach","stufe","klasse"].forEach(id => { state[id] = ""; $(id).value = ""; }); state.shown = PAGE; run(); };
 $("moreBtn").onclick = () => { state.shown += PAGE; render(); };
 
 /* ===== Daten laden ===== */
