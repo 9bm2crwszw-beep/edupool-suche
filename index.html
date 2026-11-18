@@ -81,6 +81,31 @@ mark{background:var(--mark);color:inherit;border-radius:3px;padding:0 1px}
 .loading .bar{width:220px;height:6px;border-radius:6px;background:var(--line);margin:12px auto 0;overflow:hidden}
 .loading .bar i{display:block;height:100%;width:40%;background:var(--accent);border-radius:6px;animation:slide 1.1s ease-in-out infinite}
 @keyframes slide{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+/* News */
+#news{margin:22px 0 26px}
+#news.unten{margin-top:40px;padding-top:24px;border-top:1px solid var(--line)}
+.nbereich{margin:0 0 26px}
+.nkopf{display:flex;align-items:center;gap:10px;margin:0 0 10px}
+.nkopf h2{font-size:1.25rem;margin:0;font-weight:700}
+.nkopf .alle{margin-left:auto;font-size:.88rem;color:var(--accent);text-decoration:none;font-weight:600}
+.nkopf .alle:hover{text-decoration:underline}
+.npfeile{display:flex;gap:6px}
+.npfeile button{width:34px;height:34px;border-radius:8px;border:0;background:var(--accent);color:#fff;font-size:1.1rem;cursor:pointer;line-height:1}
+.npfeile button:disabled{opacity:.35;cursor:default}
+.nspur{display:grid;grid-auto-flow:column;grid-auto-columns:calc((100% - 32px)/3);gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;
+  scroll-behavior:smooth;padding:2px 2px 8px;scrollbar-width:none}
+.nspur::-webkit-scrollbar{display:none}
+.ncard{scroll-snap-align:start;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;
+  text-decoration:none;color:inherit;border:1px solid transparent;transition:border-color .12s,box-shadow .12s}
+.ncard:hover,.ncard:focus-visible{border-color:#b9c7de;box-shadow:0 2px 4px rgba(20,30,50,.08),0 10px 24px rgba(20,30,50,.1);outline:none}
+.nbild{aspect-ratio:16/9;background:#fff;overflow:hidden}
+.nbild img{width:100%;height:100%;object-fit:cover;display:block}
+.ninhalt{padding:10px 14px 14px;display:flex;flex-direction:column;gap:4px}
+.ndatum{font-size:.75rem;color:var(--muted)}
+.ntitel{font-weight:600;font-size:.98rem;line-height:1.3;margin:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ntext{font-size:.85rem;color:#39414f;margin:0;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+@media (max-width:900px){.nspur{grid-auto-columns:calc((100% - 16px)/2)}}
+@media (max-width:560px){.nspur{grid-auto-columns:85%}}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 @media (max-width:560px){.grid{grid-template-columns:1fr}.wrap{padding:14px 12px 36px}h1{font-size:1.25rem}}
 </style>
@@ -103,12 +128,11 @@ mark{background:var(--mark);color:inherit;border-radius:3px;padding:0 1px}
     <select id="fach"><option value="">Alle Fächer</option></select>
     <label class="sr" for="stufe">Bildungsbereich</label>
     <select id="stufe"><option value="">Alle Bildungsbereiche</option></select>
-    <label class="sr" for="klasse">Klasse</label>
-    <select id="klasse"><option value="">Alle Klassen</option></select>
     <label class="sr" for="sort">Sortierung</label>
     <select id="sort"><option value="rel">Beste Treffer</option><option value="new">Neueste zuerst</option><option value="short">Kürzeste zuerst</option><option value="az">Titel A–Z</option></select>
   </div>
 
+  <section id="news" hidden aria-label="Neuigkeiten"></section>
   <div class="statusline"><span id="count" aria-live="polite"></span><button class="linkbtn" id="reset" hidden>Filter zurücksetzen</button></div>
   <div id="note"></div>
   <div class="grid" id="grid"><div class="loading" style="grid-column:1/-1">Mediathek wird geladen …<div class="bar"><i></i></div></div></div>
@@ -125,6 +149,9 @@ const STANDORT = 26;
 const RECORD_URL = (id, src) => `https://hessen.edupool.de/?record=${encodeURIComponent(id)}&src=${encodeURIComponent(src || "online")}&standort=${STANDORT}`;
 const COVER_URL = d => `https://playout01.edupool.cloud/cover/default/400x226/${encodeURIComponent(d.img || d.id.toUpperCase())}.png`;
 const PAGE = 24;
+const NEWS_URL = "news.json";              // wird vom GitHub-Workflow täglich aus edupool erzeugt
+const NEWS_LINK = id => `https://hessen.edupool.de/?newsid=${encodeURIComponent(id)}&standort=${STANDORT}`;
+const EDUPOOL_START = `https://hessen.edupool.de/home?standort=${STANDORT}`;
 const TYPE_GROUPS = [
   ["Film & Video", ["Online-Film","Filmsequenz","Video-DVD","16-mm-Film","Super-8-Film","Videokassette"]],
   ["Medienpaket", ["Online-Medium","Medienpaket"]],
@@ -260,7 +287,7 @@ function search(query){
 }
 
 /* ===== Oberfläche ===== */
-const state = { q: "", types: new Set(), stufe: "", fach: "", klasse: "", sort: "rel", shown: PAGE };
+const state = { q: "", types: new Set(), stufe: "", fach: "", sort: "rel", shown: PAGE };
 const ICONS = {
   "Film & Video": '<path d="M4 6h11a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1z"/><path d="m16 10 5-3v10l-5-3"/>',
   "Medienpaket": '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11"/>',
@@ -286,7 +313,6 @@ function init(data){
   groupsPresent = TYPE_GROUPS.map(g => g[0]).concat("Sonstiges").filter(g => DOCS.some(d => d.g === g));
   STUFEN_ORDER.filter(s => DOCS.some(d => d.st.includes(s))).forEach(s => $("stufe").add(new Option(s, s)));
   [...new Set(DOCS.flatMap(d => d.f))].sort((a, b) => a.localeCompare(b, "de")).forEach(f => $("fach").add(new Option(f, f)));
-  for (let k = 1; k <= 13; k++) $("klasse").add(new Option(`Klasse ${k}`, k));
   $("q").disabled = false;
   try { const pq = new URLSearchParams(location.search).get("q"); if (pq){ $("q").value = pq; state.q = pq; $("clear").style.display = "block"; } } catch(e){}
   run();
@@ -294,7 +320,7 @@ function init(data){
 
 function run(){
   const { hits, terms, partial, klasse } = search(state.q);
-  const k = state.klasse ? +state.klasse : klasse;
+  const k = klasse;
   const base = hits ? hits : DOCS.map(d => ({ d, s: 0 }));
   const passOther = x => (!state.stufe || x.d.st.includes(state.stufe))
     && (!state.fach || x.d.f.includes(state.fach))
@@ -310,8 +336,9 @@ function run(){
     az: (a, b) => a.d.t.localeCompare(b.d.t, "de")
   };
   list.sort(sorters[state.sort]);
-  last = { list, terms, partial, typeCounts, klasseAuto: !state.klasse && klasse ? klasse : null };
+  last = { list, terms, partial, typeCounts, klasseAuto: klasse || null };
   render();
+  platziereNews();
 }
 
 function render(){
@@ -321,8 +348,8 @@ function render(){
     if (!n && !on) return "";
     return `<button type="button" class="chip" aria-pressed="${on}" data-g="${esc(g)}">${esc(g)} <span class="n">${fmtN(n)}</span></button>`;
   }).join("");
-  ["fach","stufe","klasse"].forEach(id => $(id).classList.toggle("active", !!state[id]));
-  const filtered = state.types.size || state.stufe || state.fach || state.klasse;
+  ["fach","stufe"].forEach(id => $(id).classList.toggle("active", !!state[id]));
+  const filtered = state.types.size || state.stufe || state.fach;
   $("reset").hidden = !filtered;
   $("count").innerHTML = state.q
     ? `<strong>${fmtN(list.length)}</strong> Treffer für „${esc(state.q)}“${klasseAuto ? ` (Klasse ${klasseAuto})` : ""}`
@@ -367,10 +394,56 @@ $("q").addEventListener("input", e => {
 $("clear").onclick = () => { setQ(""); $("q").focus(); };
 $("types").onclick = e => { const b = e.target.closest(".chip"); if (!b) return; const g = b.dataset.g; state.types.has(g) ? state.types.delete(g) : state.types.add(g); state.shown = PAGE; run(); };
 $("grid").addEventListener("click", e => { const b = e.target.closest("[data-q]"); if (!b) return; e.preventDefault(); setQ(b.dataset.q); window.scrollTo({ top: 0, behavior: "smooth" }); });
-["fach","stufe","klasse"].forEach(id => $(id).onchange = e => { state[id] = e.target.value; state.shown = PAGE; run(); });
+["fach","stufe"].forEach(id => $(id).onchange = e => { state[id] = e.target.value; state.shown = PAGE; run(); });
 $("sort").onchange = e => { state.sort = e.target.value; run(); };
-$("reset").onclick = () => { state.types.clear(); ["fach","stufe","klasse"].forEach(id => { state[id] = ""; $(id).value = ""; }); state.shown = PAGE; run(); };
+$("reset").onclick = () => { state.types.clear(); ["fach","stufe"].forEach(id => { state[id] = ""; $(id).value = ""; }); state.shown = PAGE; run(); };
 $("moreBtn").onclick = () => { state.shown += PAGE; render(); };
+
+/* ===== News aus edupool ===== */
+function renderNews(data){
+  const box = $("news");
+  const bereiche = (data && data.bereiche || []).filter(b => b.eintraege && b.eintraege.length);
+  if (!bereiche.length) return;
+  box.innerHTML = bereiche.map((b, n) => `
+    <div class="nbereich">
+      <div class="nkopf"><h2>${esc(b.titel)}</h2>
+        <a class="alle" href="${EDUPOOL_START}" target="_blank" rel="noopener">Alle News anzeigen</a>
+        <div class="npfeile"><button type="button" data-dir="-1" data-n="${n}" aria-label="Zurück">‹</button><button type="button" data-dir="1" data-n="${n}" aria-label="Weiter">›</button></div>
+      </div>
+      <div class="nspur" id="nspur${n}">${b.eintraege.map(e => `
+        <a class="ncard" href="${NEWS_LINK(e.id)}" target="_blank" rel="noopener">
+          <div class="nbild">${e.bild ? `<img src="${esc(encodeURI(e.bild))}" alt="" loading="lazy" onerror="this.remove()">` : ""}</div>
+          <div class="ninhalt"><span class="ndatum">${esc(e.datum || "")}</span><h3 class="ntitel">${esc(e.titel)}</h3>${e.text ? `<p class="ntext">${esc(e.text)}</p>` : ""}</div>
+        </a>`).join("")}
+      </div>
+    </div>`).join("");
+  box.hidden = false;
+  const pfeile = () => box.querySelectorAll(".npfeile").forEach(p => {
+    const sp = $("nspur" + p.querySelector("button").dataset.n);
+    const [zur, vor] = p.querySelectorAll("button");
+    zur.disabled = sp.scrollLeft < 5;
+    vor.disabled = sp.scrollLeft + sp.clientWidth >= sp.scrollWidth - 5;
+  });
+  box.addEventListener("click", e => {
+    const b = e.target.closest("button[data-dir]"); if (!b) return;
+    const sp = $("nspur" + b.dataset.n);
+    sp.scrollBy({ left: +b.dataset.dir * sp.clientWidth, behavior: "smooth" });
+  });
+  box.querySelectorAll(".nspur").forEach(sp => sp.addEventListener("scroll", () => requestAnimationFrame(pfeile), { passive: true }));
+  window.addEventListener("resize", pfeile);
+  pfeile();
+  platziereNews();
+}
+// Ohne Suchbegriff stehen die News oben; sobald gesucht wird, wandern sie unter die Ergebnisse
+function platziereNews(){
+  const box = $("news"); if (box.hidden) return;
+  const unten = !!state.q.trim();
+  const ziel = unten ? $("more") : document.querySelector(".statusline");
+  if (unten) { if (ziel.nextSibling !== box) ziel.after(box); }
+  else if (ziel.previousElementSibling !== box) ziel.before(box);
+  box.classList.toggle("unten", unten);
+}
+fetch(NEWS_URL, { cache: "no-cache" }).then(r => r.ok ? r.json() : null).then(renderNews).catch(() => {});
 
 /* ===== Daten laden ===== */
 const inline = document.getElementById("data").textContent.trim();
