@@ -1,0 +1,68 @@
+# Veröffentlicht die Mediathek-Suche auf GitHub Pages und holt dabei die aktuellen
+# News und Landes-News von edupool Hessen (Standort 26).
+#
+# Läuft automatisch:
+#   - jeden Morgen (siehe "schedule")
+#   - nach jedem Hochladen von Dateien (z. B. neue medien.json)
+#   - von Hand: Reiter "Actions" -> "Seite veröffentlichen" -> "Run workflow"
+
+name: Seite veröffentlichen
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 4 * * *"   # täglich 04:17 UTC (05:17 / 06:17 Uhr deutscher Zeit)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  veroeffentlichen:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Dateien holen
+        uses: actions/checkout@v4
+
+      - name: GitHub Pages vorbereiten
+        id: pages
+        uses: actions/configure-pages@v5
+
+      - name: Bisherige News als Rückfall übernehmen
+        run: curl -fsSL "${{ steps.pages.outputs.base_url }}/news.json" -o news.json || echo "Noch keine news.json veröffentlicht."
+
+      - name: Node einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Aktuelle News von edupool abrufen
+        run: |
+          npm install --no-save --no-package-lock playwright@1
+          npx playwright install --with-deps chromium
+          node news-abrufen.mjs news.json || echo "::warning::News konnten nicht abgerufen werden – die bisherigen News bleiben stehen."
+
+      - name: Seite zusammenstellen
+        run: |
+          mkdir -p _site
+          cp index.html medien.json _site/
+          if [ -f news.json ]; then cp news.json _site/; fi
+
+      - name: Hochladen
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+      - name: Veröffentlichen
+        id: deployment
+        uses: actions/deploy-pages@v4
