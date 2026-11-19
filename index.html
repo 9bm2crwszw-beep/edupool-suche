@@ -43,7 +43,11 @@ select{font:inherit;font-size:.9rem;padding:6px 30px 6px 10px;border:1px solid v
 select.active{border-color:var(--accent);background-color:var(--accent-soft)}
 .statusline{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin:10px 2px 14px;color:var(--muted);font-size:.92rem}
 .statusline strong{color:var(--ink)}
-.linkbtn{border:0;background:none;color:var(--accent);font:inherit;font-size:.9rem;cursor:pointer;padding:0;text-decoration:underline}
+.resetbtn{font:inherit;font-size:.85rem;display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:8px;border:1px solid var(--line);
+  background:#fff;color:var(--accent);cursor:pointer}
+.resetbtn svg{width:14px;height:14px}
+.resetbtn:hover:not(:disabled){border-color:var(--accent);background:var(--accent-soft)}
+.resetbtn:disabled{color:#a3abb9;cursor:default}
 
 .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
 @media (max-width:900px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -159,10 +163,11 @@ mark{background:var(--mark);color:inherit;border-radius:3px;padding:0 1px}
     <select id="typ"><option value="">Alle Medienarten</option></select>
     <label class="sr" for="sort">Sortierung</label>
     <select id="sort"><option value="rel">Beste Treffer</option><option value="new">Neueste zuerst</option><option value="short">Kürzeste zuerst</option><option value="az">Titel A–Z</option></select>
+    <button type="button" class="resetbtn" id="reset" disabled title="Fach, Bildungsbereich, Medienart und Sortierung zurücksetzen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>Filter zurücksetzen</button>
   </div>
 
   <section id="news" hidden aria-label="Neuigkeiten"></section>
-  <div class="statusline"><span id="count" aria-live="polite"></span><button class="linkbtn" id="reset" hidden>Filter zurücksetzen</button></div>
+  <div class="statusline"><span id="count" aria-live="polite"></span></div>
   <div id="note"></div>
   <div class="grid" id="grid"><div class="loading" style="grid-column:1/-1">Mediathek wird geladen …<div class="bar"><i></i></div></div></div>
   <div class="more" id="more" hidden><button class="btn" id="moreBtn">Weitere Treffer anzeigen</button></div>
@@ -389,7 +394,7 @@ function render(){
     .map(g => `<option value="${esc(g)}"${state.typ === g ? " selected" : ""}>${esc(g)} (${fmtN(typeCounts[g] || 0)})</option>`).join("");
   ["fach","stufe","typ"].forEach(id => $(id).classList.toggle("active", !!state[id]));
   const filtered = state.typ || state.stufe || state.fach;
-  $("reset").hidden = !filtered;
+  $("reset").disabled = !(filtered || state.sort !== "rel");
   $("count").innerHTML = state.q
     ? `<strong>${fmtN(list.length)}</strong> Treffer für „${esc(state.q)}“${klasseAuto ? ` (Klasse ${klasseAuto})` : ""}`
     : `<strong>${fmtN(list.length)}</strong> Medien${filtered ? " (gefiltert)" : " – die neuesten zuerst"}`;
@@ -435,7 +440,7 @@ $("typ").onchange = e => { state.typ = e.target.value; state.shown = PAGE; run()
 $("grid").addEventListener("click", e => { const b = e.target.closest("[data-q]"); if (!b) return; e.preventDefault(); setQ(b.dataset.q); window.scrollTo({ top: 0, behavior: "smooth" }); });
 ["fach","stufe"].forEach(id => $(id).onchange = e => { state[id] = e.target.value; state.shown = PAGE; run(); });
 $("sort").onchange = e => { state.sort = e.target.value; run(); };
-$("reset").onclick = () => { ["fach","stufe","typ"].forEach(id => { state[id] = ""; $(id).value = ""; }); state.shown = PAGE; run(); };
+$("reset").onclick = () => { ["fach","stufe","typ"].forEach(id => { state[id] = ""; $(id).value = ""; }); state.sort = "rel"; $("sort").value = "rel"; state.shown = PAGE; run(); };
 $("moreBtn").onclick = () => { state.shown += PAGE; render(); };
 
 /* ===== Login (verlinkt auf die Anmeldung in edupool) ===== */
@@ -489,7 +494,8 @@ function renderNews(data){
 // Ohne Suchbegriff stehen die News oben; sobald gesucht wird, wandern sie unter die Ergebnisse
 function platziereNews(){
   const box = $("news"); if (box.hidden) return;
-  const unten = !!state.q.trim();
+  // News nach unten, sobald gesucht oder eines der Auswahlfelder vom Ausgangswert geändert wurde
+  const unten = !!(state.q.trim() || state.fach || state.stufe || state.typ || state.sort !== "rel");
   const ziel = unten ? $("more") : document.querySelector(".statusline");
   if (unten) { if (ziel.nextSibling !== box) ziel.after(box); }
   else if (ziel.previousElementSibling !== box) ziel.before(box);
