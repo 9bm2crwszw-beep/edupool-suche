@@ -114,8 +114,9 @@ mark{background:var(--mark);color:inherit;border-radius:3px;padding:0 1px}
   text-decoration:none;color:inherit;border:1px solid transparent}
 @media (hover:hover){.ncard{transition:border-color .12s,box-shadow .12s}}
 .ncard:hover,.ncard:focus-visible{border-color:#b9c7de;box-shadow:0 2px 4px rgba(20,30,50,.08),0 10px 24px rgba(20,30,50,.1);outline:none}
-.nbild{aspect-ratio:16/9;background:#fff;overflow:hidden}
-.nbild img{width:100%;height:100%;object-fit:cover;display:block}
+.nbild{aspect-ratio:16/9;background:#fff;overflow:hidden;position:relative}
+.nbg{position:absolute;inset:-16px;background-size:cover;background-position:center;filter:blur(8px) brightness(1.1) opacity(.8)}
+.nbild img{position:relative;width:100%;height:100%;object-fit:contain;display:block}
 .ninhalt{padding:8px 11px 11px;display:flex;flex-direction:column;gap:3px}
 .ndatum{font-size:.7rem;color:var(--muted)}
 .ntitel{font-weight:600;font-size:.88rem;line-height:1.3;margin:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -148,17 +149,16 @@ mark{background:var(--mark);color:inherit;border-radius:3px;padding:0 1px}
     <input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="Wonach suchst du? z. B. Fotosynthese, Demokratie, Lawinen …" disabled>
     <button type="button" class="clear" id="clear" aria-label="Suche leeren">×</button>
   </form>
-  <p class="hint">Durchsucht Titel, Beschreibungen und Schlagwörter. Tippfehler und Wortteile werden erkannt. Ein Klick auf ein Medium öffnet es in der Mediathek.</p>
 
   <div class="selects">
     <label class="sr" for="fach">Fach</label>
     <select id="fach"><option value="">Alle Fächer</option></select>
     <label class="sr" for="stufe">Bildungsbereich</label>
     <select id="stufe"><option value="">Alle Bildungsbereiche</option></select>
-    <label class="sr" for="sort">Sortierung</label>
-    <select id="sort"><option value="rel">Beste Treffer</option><option value="new">Neueste zuerst</option><option value="short">Kürzeste zuerst</option><option value="az">Titel A–Z</option></select>
     <label class="sr" for="typ">Medienart</label>
     <select id="typ"><option value="">Alle Medienarten</option></select>
+    <label class="sr" for="sort">Sortierung</label>
+    <select id="sort"><option value="rel">Beste Treffer</option><option value="new">Neueste zuerst</option><option value="short">Kürzeste zuerst</option><option value="az">Titel A–Z</option></select>
   </div>
 
   <section id="news" hidden aria-label="Neuigkeiten"></section>
@@ -450,12 +450,12 @@ function renderNews(data){
   box.innerHTML = bereiche.map((b, n) => `
     <div class="nbereich">
       <div class="nkopf"><h2>${esc(b.titel)}</h2>
-        <a class="alle" href="${EDUPOOL_START}" target="_blank" rel="noopener">Alle News anzeigen</a>
+        <a class="alle" href="${EDUPOOL_START}" target="_blank" rel="noopener">Alle ${esc(b.titel)} anzeigen</a>
         <div class="npfeile"><button type="button" data-dir="-1" data-n="${n}" aria-label="Zurück">‹</button><button type="button" data-dir="1" data-n="${n}" aria-label="Weiter">›</button></div>
       </div>
       <div class="nspur" id="nspur${n}">${b.eintraege.map(e => `
         <a class="ncard" href="${NEWS_LINK(e.id)}" target="_blank" rel="noopener">
-          <div class="nbild">${e.bild ? `<img src="${esc(encodeURI(e.bild))}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : ""}</div>
+          <div class="nbild">${e.bild ? `<div class="nbg" style="background-image:url(&quot;${esc(encodeURI(e.bild))}&quot;)"></div><img src="${esc(encodeURI(e.bild))}" alt="" loading="lazy" decoding="async" onerror="this.parentNode.textContent=''">` : ""}</div>
           <div class="ninhalt"><span class="ndatum">${esc(e.datum || "")}</span><h3 class="ntitel">${esc(e.titel)}</h3>${e.text ? `<p class="ntext">${esc(e.text)}</p>` : ""}</div>
         </a>`).join("")}
       </div>
