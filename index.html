@@ -226,7 +226,7 @@ async function buildIndex(){
     for (const t of tokens(d.t)) put(t, d.i, 6);
     for (const s of d.sw) for (const t of tokens(s)) put(t, d.i, 5);
     for (const t of tokens((d.u || "") + " " + (d.se || ""))) put(t, d.i, 4);
-    for (const t of tokens([d.ty, d.g, ...d.f].join(" "))) put(t, d.i, 3);
+    for (const t of tokens(d.f.join(" "))) put(t, d.i, 3);          // Fächer (Medientyp nicht: dafür gibt es das Auswahlfeld)
     for (const t of tokens(d.p || "")) put(t, d.i, 2);
     for (const t of tokens(d.d)) put(t, d.i, 1);
     d.nt = norm(d.t);
