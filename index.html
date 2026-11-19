@@ -262,14 +262,20 @@ function expand(q){                       // passende Begriffe mit Qualitätsfak
     }
   }
   const maxD = q.length >= 8 ? 2 : q.length >= 4 ? 1 : 0;
+  // Wortteil, z. B. „ball“ in „fussball“, „biene“ in „honigbiene“
   if (q.length >= 4){
+    for (const t of TERMS) if (!out.has(t) && t.length > q.length && t.includes(q)) out.set(t, 0.6);
+  }
+  // Ähnliche Schreibweisen: bei Tippfehlern (Wort kommt sonst nirgends vor) und bei langen Wörtern
+  // (Wortformen wie „Bruchrechnen“/„Bruchrechnung“). Kurze Wörter wie „Biene“ sollen nicht „Binnenmeer“ finden.
+  if (maxD && (!out.size || q.length >= 8)){
     for (const t of TERMS){
-      if (out.has(t)) continue;
+      if (t[0] !== q[0] || out.has(t)) continue;
       let s = 0;
-      if (t.length > q.length && t.includes(q)) s = 0.6;          // Wortteil, z. B. „ball“ in „fussball“
-      else if (maxD && t[0] === q[0] && Math.abs(t.length - q.length) <= maxD){
+      if (Math.abs(t.length - q.length) <= maxD){
         const d = lev(q, t, maxD); if (d <= maxD) s = 0.72 - 0.12 * (d - 1);
-      } else if (maxD && t[0] === q[0] && t.length > q.length && q.length >= 5){
+      }
+      if (!s && t.length > q.length && q.length >= 5){
         const d = lev(q, t.slice(0, q.length), maxD); if (d <= maxD) s = 0.5 - 0.12 * (d - 1);
       }
       if (s > 0) out.set(t, s);
@@ -308,11 +314,12 @@ function search(query){
   const hits = ids.map(i => {
     const d = DOCS[i];
     let s = total.get(i) + (cnt.get(i) - 1) * 2;
+    const stark = total.get(i) / qt.length >= 1.5;      // Begriff steht im Titel, in Schlagwörtern o. Ä. – nicht nur beiläufig in der Beschreibung
     if (nq.length > 2 && d.nt.includes(nq)) s += 8;
     if (d.nt.startsWith(nq)) s += 3;
     if (total.get(i) / qt.length >= 3) s += 4 / Math.max(1, (d.nt.match(WORD) || []).length);   // Treffer im Titel: kurze Titel bevorzugen
     if (d.y) s += Math.max(0, d.y - 2005) * 0.04;
-    return { d, s };
+    return { d, s, stark };
   });
   return { hits, terms, partial, klasse };
 }
@@ -366,7 +373,9 @@ function run(){
     short: (a, b) => (a.d.du ?? 1e9) - (b.d.du ?? 1e9),
     az: (a, b) => a.d.t.localeCompare(b.d.t, "de")
   };
-  list.sort(sorters[state.sort]);
+  // Bei einer Suche: gut passende Medien immer vor nur beiläufig passenden, innerhalb davon gewählte Sortierung
+  const stufe = (a, b) => hits && state.sort !== "rel" ? (b.stark - a.stark) : 0;
+  list.sort((a, b) => stufe(a, b) || sorters[state.sort](a, b));
   last = { list, terms, partial, typeCounts, klasseAuto: klasse || null };
   render();
   platziereNews();
